@@ -18,11 +18,6 @@ class Program {
         for (int blinks = 0; blinks < numBilnks; blinks++) {
             int size = nums.Count;
             for (int i = 0; i < size; i++) {
-                if (nums[i] < 0) {
-                    Console.WriteLine("error");
-                    break;
-                }
-
                 if (nums[i] == 0) {
                     nums[i] = 1;
                     continue;
