@@ -2,113 +2,143 @@
 using System.IO;
 
 class Program {
-    static long[] splitNum(long num) {
-        string str = num.ToString();
-        if (str.Length % 2 == 0) {
-            return new long[] {
-                Convert.ToInt64(str.Substring(0, str.Length / 2)),
-                Convert.ToInt64(str.Substring(str.Length / 2))
-            };
-        } else {
-            return null;
+    static bool inBounds(int r, int c, char[][] garden) {
+        return 0 <= r && r < garden.Length && 0 <= c && c < garden[0].Length;
+    }
+
+    static int area = 0;
+    static int perimeter = 0;
+    static void getCost(int r, int c, char plant, char[][] garden, bool[][] visited) {
+        if (!inBounds(r, c, garden) || visited[r][c] || garden[r][c] != plant) {
+            return;
+        }
+        visited[r][c] = true;
+        area++;
+
+        int[][] directions = {
+            new int[] {-1, 0},
+            new int[] {0, 1},
+            new int[] {1, 0},
+            new int[] {0, -1}
+        };
+        foreach (int[] direction in directions) {
+            int newR = r + direction[0], newC = c + direction[1];
+            if (!inBounds(newR, newC, garden) || garden[newR][newC] != plant) {
+                perimeter++;
+            }
+            getCost(newR, newC, plant, garden, visited);
         }
     }
 
-    static int bruteForce(List<long> nums, int numBilnks) {
-        for (int blinks = 0; blinks < numBilnks; blinks++) {
-            int size = nums.Count;
-            for (int i = 0; i < size; i++) {
-                if (nums[i] == 0) {
-                    nums[i] = 1;
-                    continue;
-                }
-
-                long[] halves = splitNum(nums[i]);
-                if (halves != null) {
-                    nums[i] = halves[0];
-                    nums.Add(halves[1]);
-                    continue;
-                }
-
-                nums[i] *= 2024;
-            }
+    static Dictionary<string, List<int>> rSides = new Dictionary<string, List<int>>();
+    static Dictionary<string, List<int>> cSides = new Dictionary<string, List<int>>();
+    static void getCostTwo(int r, int c, char plant, char[][] garden, bool[][] visited) {
+        if (!inBounds(r, c, garden) || visited[r][c] || garden[r][c] != plant) {
+            return;
         }
+        visited[r][c] = true;
+        area++;
 
-        return nums.Count;
-    }
-
-    static long optimized(List<long> nums, int numBilnks) {
-        Dictionary<long, long> freq = new Dictionary<long, long>();
-        foreach (long num in nums) {
-            if (freq.ContainsKey(num)) {
-                freq[num]++;
-            } else {
-                freq[num] = 1;
-            }
-        }
-
-        for (int blinks = 0; blinks < numBilnks; blinks++) {
-            Dictionary<long, long> newFreq = new Dictionary<long, long>();
-
-            foreach(var pair in freq) {
-                if (pair.Key == 0) {
-                    if (newFreq.ContainsKey(1)) {
-                        newFreq[1] += pair.Value;
-                    } else {
-                        newFreq[1] = pair.Value;
+        int[][] directions = {
+            new int[] {-1, 0},
+            new int[] {0, 1},
+            new int[] {1, 0},
+            new int[] {0, -1}
+        };
+        foreach (int[] direction in directions) {
+            int newR = r + direction[0], newC = c + direction[1];
+            if (!inBounds(newR, newC, garden) || garden[newR][newC] != plant) {
+                if (direction[0] != 0) {
+                    string key = r + "," + direction[0];
+                    if (!rSides.ContainsKey(key)) {
+                        rSides[key] = new List<int>();
                     }
-                    continue;
-                }
-
-                long[] halves = splitNum(pair.Key);
-                if (halves != null) {
-                    if (newFreq.ContainsKey(halves[0])) {
-                        newFreq[halves[0]] += pair.Value;
-                    } else {
-                        newFreq[halves[0]] = pair.Value;
-                    }
-
-                    if (newFreq.ContainsKey(halves[1])) {
-                        newFreq[halves[1]] += pair.Value;
-                    } else {
-                        newFreq[halves[1]] = pair.Value;
-                    }
-
-                    continue;
-                }
-
-                if (newFreq.ContainsKey(pair.Key * 2024)) {
-                    newFreq[pair.Key * 2024] += pair.Value;
+                    rSides[key].Add(newC);
                 } else {
-                    newFreq[pair.Key * 2024] = pair.Value;
+                    string key = c + "," + direction[1];
+                    if (!cSides.ContainsKey(key)) {
+                        cSides[key] = new List<int>();
+                    }
+                    cSides[key].Add(newR);
+                }
+                perimeter++;
+            }
+            getCostTwo(newR, newC, plant, garden, visited);
+        }
+    }
+
+    static int determineSides(Dictionary<string, List<int>> potentialsides) {
+        int sides = 0;
+
+        foreach (var pair in potentialsides) {
+            List<int> inds = pair.Value;
+            inds.Sort();
+
+            int disparities = 0;
+            for (int i = 1; i < inds.Count; i++) {
+                if (inds[i - 1] + 1 != inds[i]) {
+                    disparities++;
                 }
             }
-
-            freq = newFreq;
+            sides += disparities + 1;
         }
 
-        long count = 0;
-        foreach(var pair in freq) {
-            count += pair.Value;
+        return sides;
+    }
+
+    static int solve(char[][] garden, bool partOne) {
+        int totalCost = 0;
+        bool[][] visited = new bool[garden.Length][];
+        for (int i = 0; i < garden.Length; i++) {
+            visited[i] = new bool[garden[i].Length];
         }
 
-        return count;
+        for (int r = 0; r < garden.Length; r++) {
+            for (int c = 0; c < garden[r].Length; c++) {
+                if (visited[r][c]) {
+                    continue;
+                }
+
+                area = 0;
+
+                if (partOne) {
+                    perimeter = 0;
+
+                    getCost(r, c, garden[r][c], garden, visited);             
+                    totalCost += area * perimeter;
+                } else {
+                    rSides.Clear();
+                    cSides.Clear();
+
+                    getCostTwo(r, c, garden[r][c], garden, visited); 
+
+                    int sides = 0;
+                    sides += determineSides(rSides);
+                    sides += determineSides(cSides);
+
+                    totalCost += area * sides;
+                }
+            }
+        }
+
+        return totalCost;
     }
 
     static void Main(string[] args) {
-        string filePath = "../inputs/day_11.txt";
+        string filePath = "../inputs/day_12.txt";
         
-        List<long> nums = new List<long>();
+        char[][] garden = null;
         try {
-            string[] numStrings = File.ReadAllText(filePath).Split(" ");
-            foreach (string str in numStrings) {
-                nums.Add(Convert.ToInt64(str));
+            string[] lines = File.ReadAllLines(filePath);
+            garden = new char[lines.Length][];
+            for (int i = 0; i < lines.Length; i++) {
+                garden[i] = lines[i].ToCharArray();
             }
         } catch {
             Console.WriteLine("Error reading file.");
         }
 
-        Console.WriteLine(optimized(nums, 25));
-        Console.WriteLine(optimized(nums, 75));
+        Console.WriteLine(solve(garden, true));
+        Console.WriteLine(solve(garden, false));
     }
 }
