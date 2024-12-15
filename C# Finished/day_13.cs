@@ -3,10 +3,6 @@ using System.IO;
 using System.Numerics;
 
 class Program {
-    static bool inBounds(int r, int c, char[][] garden) {
-        return 0 <= r && r < garden.Length && 0 <= c && c < garden[0].Length;
-    }
-
     static int winPrize(long x, long y, int numTokens, HashSet<string> visited, long[] buttonA, long[] buttonB, long[] prize) {
         string key = x + "," + y;
         if (visited.Contains(key) || x > prize[0] || y > prize[1]) {
