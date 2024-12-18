@@ -15,12 +15,10 @@ func getValue(a: Int64, b: Int64, c: Int64, operand: Int) -> Int64 {
     }
 }
 
-func runProgram(a: Int64, b: Int64, c: Int64, program: [Int]) -> String {
+func runProgram(a: Int64, b: Int64, c: Int64, program: [Int]) -> [Int64] {
     var a = a, b = b, c = c
     var ip = 0
-    var ret = ""
-
-    var currPrintInd = 0
+    var ret: [Int64] = []
 
     while 0 <= ip && ip < program.count && 0 <= ip + 1 && ip + 1 < program.count {
         switch program[ip] {
@@ -40,15 +38,11 @@ func runProgram(a: Int64, b: Int64, c: Int64, program: [Int]) -> String {
             b = b ^ c
         case 5:
             let value = getValue(a: a, b: b, c: c, operand: program[ip + 1]) % 8
-            //if value != program[currPrintInd] {
-                //return "none"
-            //}
-            ret = "\(ret)\(value),"
-            currPrintInd += 1
+            ret.append(value)
         case 6:
-            b = b >> getValue(a: a, b: b, c: c, operand: program[ip + 1])
+            b = a >> getValue(a: a, b: b, c: c, operand: program[ip + 1])
         case 7:
-            c = c >> getValue(a: a, b: b, c: c, operand: program[ip + 1])
+            c = a >> getValue(a: a, b: b, c: c, operand: program[ip + 1])
         default:
             print("Error: Unknown instruction \(program[ip]) at \(ip).")
         }
@@ -56,10 +50,29 @@ func runProgram(a: Int64, b: Int64, c: Int64, program: [Int]) -> String {
         ip += 2
     }
 
-    return String(ret.prefix(ret.count - 1))
+    return ret
 }
 
-var a: Int64 = 7
+func recur(i: Int, a: Int64, program: [Int]) -> Int64 {
+    if (i < 0) {
+        return a
+    }
+
+    var minA = Int64.max
+    for j: Int64 in 0...7 {
+        let newA = (a << 3) + j
+        let ret = runProgram(a: newA, b: 0, c: 0, program: program)
+        if ret[0] != program[i] {
+            continue
+        }
+
+        minA = min(recur(i: i - 1, a: newA, program: program), minA)
+    }
+
+    return minA
+}
+
+var a: Int64 = 41644071
 var b: Int64 = 0
 var c: Int64 = 0
 
@@ -70,15 +83,7 @@ for i in 0..<program.count {
     program[i] = Int(programStringSplit[i])!
 }
 
-var a0: Int64 = Int64(Int64(140737488355328) + (8 - (Int64(140737488355328) % 8)) + 7)
-var j: Int = 0;
-while j < 100 {
-    let ret = runProgram(a: a0, b: b, c: c, program: program)
-    //print("a = \(a0)")
-    //print(ret)
-    if ret == programString {
-        print("a = \(a0)")
-    }
-    a0 += 8
-    j += 1
-}
+print(runProgram(a: a, b: b, c: c, program: program))
+
+let minA = recur(i: program.count - 1, a: 0, program: program)
+print(minA)
