@@ -148,7 +148,8 @@ class Graph {
         nodesHashSet.addAll(nodes);
         return nodesHashSet;
     }
-
+    
+    @SuppressWarnings("unchecked")
     public void bkMaxCliques(HashSet<String> possibleClique, HashSet<String> availableVertices, HashSet<String> excludedVertices, TreeSet<String> maxClique) {
         if (availableVertices.size() == 0 && excludedVertices.size() == 0) {
             if (possibleClique.size() > maxClique.size()) {
